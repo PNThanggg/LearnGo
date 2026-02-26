@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/PNThanggg/LearnGo/internal/auth"
 	"github.com/PNThanggg/LearnGo/internal/database"
 	"github.com/google/uuid"
 )
@@ -36,7 +37,7 @@ func (apiConfig *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	responseWithJSON(w, 200, databaseUserToUser(user))
+	responseWithJSON(w, 201, databaseUserToUser(user))
 }
 
 func (apiConfig *apiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
@@ -50,20 +51,14 @@ func (apiConfig *apiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Reque
 }
 
 func (apiConfig *apiConfig) handlerGetUserByAPIKey(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		APIKey string `json:"api_key"`
-	}
+	apiKey, err := auth.GetAPIKey(r.Header)
 
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-
-	err := decoder.Decode(&params)
 	if err != nil {
-		responseWithError(w, 400, fmt.Sprintf("Error parsing request body: %v", err))
+		responseWithError(w, 403, fmt.Sprintf("Auth error: %v", err))
 		return
 	}
 
-	user, err := apiConfig.DB.GetUserByAPIKey(r.Context(), params.APIKey)
+	user, err := apiConfig.DB.GetUserByAPIKey(r.Context(), apiKey)
 	if err != nil {
 		responseWithError(w, 404, fmt.Sprintf("Error getting user by api_key: %v", err))
 		return
