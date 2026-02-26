@@ -38,3 +38,35 @@ func (apiConfig *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Req
 
 	responseWithJSON(w, 200, databaseUserToUser(user))
 }
+
+func (apiConfig *apiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := apiConfig.DB.GetUsers(r.Context())
+	if err != nil {
+		responseWithError(w, 500, fmt.Sprintf("Error getting users: %v", err))
+		return
+	}
+
+	responseWithJSON(w, 200, databaseUsersToUsers(users))
+}
+
+func (apiConfig *apiConfig) handlerGetUserByAPIKey(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		APIKey string `json:"api_key"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+
+	err := decoder.Decode(&params)
+	if err != nil {
+		responseWithError(w, 400, fmt.Sprintf("Error parsing request body: %v", err))
+		return
+	}
+
+	user, err := apiConfig.DB.GetUserByAPIKey(r.Context(), params.APIKey)
+	if err != nil {
+		responseWithError(w, 404, fmt.Sprintf("Error getting user by api_key: %v", err))
+		return
+	}
+	responseWithJSON(w, 200, databaseUserToUser(user))
+}
