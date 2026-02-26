@@ -1,0 +1,15 @@
+*.iml
+*.ipr
+*.iws
+.idea/
+/build/
+/dist/
+/out/
+
+*.exe
+
+# Go
+vendor/
+
+# Environment
+.env
