@@ -57,7 +57,7 @@ func main() {
 	v1Router := chi.NewRouter()
 	v1Router.Post("/user", apiConfig.handlerCreateUser)
 	v1Router.Get("/users", apiConfig.handlerGetUsers)
-	v1Router.Get("/user_by_api_key", apiConfig.handlerGetUserByAPIKey)
+	v1Router.Get("/user_by_api_key", apiConfig.middlewareAuth(apiConfig.handlerGetUserByAPIKey))
 
 	router.Mount("/v1", v1Router)
 

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/PNThanggg/LearnGo/internal/auth"
 	"github.com/PNThanggg/LearnGo/internal/database"
 	"github.com/google/uuid"
 )
@@ -50,18 +49,6 @@ func (apiConfig *apiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Reque
 	responseWithJSON(w, 200, databaseUsersToUsers(users))
 }
 
-func (apiConfig *apiConfig) handlerGetUserByAPIKey(w http.ResponseWriter, r *http.Request) {
-	apiKey, err := auth.GetAPIKey(r.Header)
-
-	if err != nil {
-		responseWithError(w, 403, fmt.Sprintf("Auth error: %v", err))
-		return
-	}
-
-	user, err := apiConfig.DB.GetUserByAPIKey(r.Context(), apiKey)
-	if err != nil {
-		responseWithError(w, 404, fmt.Sprintf("Error getting user by api_key: %v", err))
-		return
-	}
+func (apiConfig *apiConfig) handlerGetUserByAPIKey(w http.ResponseWriter, r *http.Request, user database.User) {
 	responseWithJSON(w, 200, databaseUserToUser(user))
 }
