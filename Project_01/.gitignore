@@ -9,10 +9,7 @@
 *.exe
 
 # Go
-Project_01/vendor/
+vendor/
 
 # Environment
 .env
-
-# Claude
-.claude/
