@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"todo-apps/internal/repository"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -36,6 +38,25 @@ func GetAllTodosHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		todos, err := repository.GetAllTodos(pool)
 		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, todos)
+	}
+}
+
+func GetTodoHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		todos, err := repository.GetTodoById(pool, id)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

@@ -41,6 +41,7 @@ func main() {
 
 	router.GET("/todos", handlers.GetAllTodosHandler(pool))
 	router.POST("/todos", handlers.CreateTodoHandler(pool))
+	router.GET("/todos/:id", handlers.GetTodoHandler(pool))
 
 	err = router.Run(":" + cfg.Port)
 	if err != nil {
