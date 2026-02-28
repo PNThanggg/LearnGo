@@ -1,2 +1,2 @@
 -- +goose Down
-drop table if exists todos_user;
+drop table if exists todos;
