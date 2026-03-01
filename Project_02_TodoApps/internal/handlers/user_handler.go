@@ -11,7 +11,7 @@ import (
 )
 
 type RegisterRequest struct {
-	Email    string `json:"email" binding:"required""`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -20,11 +20,6 @@ func CreateUserHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 		var req RegisterRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if req.Email == "" || req.Password == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Email or password is required"})
 			return
 		}
 
