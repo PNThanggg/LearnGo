@@ -45,6 +45,8 @@ func main() {
 	router.PUT("/todos/:id", handlers.UpdateTodoHandler(pool))
 	router.DELETE("/todos/:id", handlers.DeleteTodoHandler(pool))
 
+	router.POST("/auth/register", handlers.CreateUserHandler(pool))
+
 	err = router.Run(":" + cfg.Port)
 	if err != nil {
 		fmt.Printf("Error starting server: %s\n", err)
