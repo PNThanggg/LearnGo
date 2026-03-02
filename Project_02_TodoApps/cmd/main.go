@@ -6,6 +6,7 @@ import (
 	"todo-apps/internal/config"
 	"todo-apps/internal/database"
 	"todo-apps/internal/handlers"
+	"todo-apps/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,6 +47,9 @@ func main() {
 	router.DELETE("/todos/:id", handlers.DeleteTodoHandler(pool))
 
 	router.POST("/auth/register", handlers.CreateUserHandler(pool))
+	router.POST("/auth/login", handlers.LoginHandler(pool, cfg))
+
+	router.GET("/protected-test", middleware.AuthMiddleware(cfg), handlers.TestProtectedHandler())
 
 	err = router.Run(":" + cfg.Port)
 	if err != nil {

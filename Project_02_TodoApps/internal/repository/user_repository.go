@@ -14,7 +14,7 @@ func CreateUser(pool *pgxpool.Pool, user *models.User) (*models.User, error) {
 	defer cancel()
 
 	id := uuid.New()
-	var query = "INSERT INTO users (id, email, password) VALUES ($1, $2, $3) RETURNING id, title, created_at, updated_at"
+	var query = "INSERT INTO users (id, email, password) VALUES ($1, $2, $3) RETURNING id, email, password, created_at, updated_at"
 
 	err := pool.QueryRow(ctx, query, id, user.Email, user.Password).Scan(
 		&user.ID,
@@ -35,7 +35,7 @@ func GetUserByEmail(pool *pgxpool.Pool, email string) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var query = "SELECT id, title, created_at, updated_at FROM users WHERE email = $1"
+	var query = "SELECT id, email, password, created_at, updated_at FROM users WHERE email = $1"
 
 	var user models.User
 
@@ -58,7 +58,7 @@ func GetUserById(pool *pgxpool.Pool, id string) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var query = "SELECT id, title, created_at, updated_at FROM users WHERE id = $1"
+	var query = "SELECT id, email, password, created_at, updated_at FROM users WHERE id = $1"
 
 	var user models.User
 
