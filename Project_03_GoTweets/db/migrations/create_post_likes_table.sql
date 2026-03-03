@@ -1,0 +1,14 @@
+-- migrate:up
+CREATE TABLE IF NOT EXISTS post_likes
+(
+    id         UUID PRIMARY KEY,
+    post_id    UUID      NOT NULL,
+    user_id    UUID      NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_id_post_likes FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_post_id_post_likes FOREIGN KEY (post_id) REFERENCES posts (id)
+);
+
+-- migrate:down
+DROP TABLE IF EXISTS post_likes;
