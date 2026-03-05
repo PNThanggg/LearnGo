@@ -19,6 +19,10 @@ type UserRepository interface {
 	GetRefreshToken(ctx context.Context, userId uuid.UUID, now time.Time) (*models.RefreshTokenModel, error)
 
 	StoreRefreshToken(ctx context.Context, refreshToken *models.RefreshTokenModel) error
+
+	GetUserByRefreshToken(ctx context.Context, refreshToken string, now time.Time) (*models.UserModel, *models.RefreshTokenModel, error)
+
+	UpdateRefreshToken(ctx context.Context, id uuid.UUID, newToken string, expiredAt time.Time) error
 }
 
 type UserRepositoryImpl struct {
@@ -93,5 +97,47 @@ func (repository *UserRepositoryImpl) StoreRefreshToken(ctx context.Context, ref
 
 	id := uuid.New()
 	_, err := repository.db.Exec(ctx, query, id, refreshToken.UserId, refreshToken.RefreshToken, refreshToken.ExpiredAt, refreshToken.CreatedAt, refreshToken.UpdatedAt)
+	return err
+}
+
+func (repository *UserRepositoryImpl) GetUserByRefreshToken(ctx context.Context, refreshToken string, now time.Time) (*models.UserModel, *models.RefreshTokenModel, error) {
+	query := `
+		SELECT u.id, u.username, u.email, u.password, u.created_at, u.updated_at,
+		       rt.id, rt.user_id, rt.refresh_token, rt.expired_at
+		FROM refresh_tokens rt
+		INNER JOIN users u ON u.id = rt.user_id
+		WHERE rt.refresh_token = $1 AND rt.expired_at > $2
+	`
+
+	var user models.UserModel
+	var token models.RefreshTokenModel
+
+	err := repository.db.QueryRow(ctx, query, refreshToken, now).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&token.ID,
+		&token.UserId,
+		&token.RefreshToken,
+		&token.ExpiredAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return &user, &token, nil
+}
+
+func (repository *UserRepositoryImpl) UpdateRefreshToken(ctx context.Context, id uuid.UUID, newToken string, expiredAt time.Time) error {
+	query := `UPDATE refresh_tokens SET refresh_token = $1, expired_at = $2, updated_at = $3 WHERE id = $4`
+
+	_, err := repository.db.Exec(ctx, query, newToken, expiredAt, time.Now(), id)
 	return err
 }

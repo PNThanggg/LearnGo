@@ -20,6 +20,8 @@ type UserService interface {
 	Register(ctx context.Context, req *dto.RegisterRequest) (string, int, error)
 
 	Login(ctx context.Context, req *dto.LoginRequest) (string, string, int, error)
+
+	RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (string, string, int, error)
 }
 
 type UserServiceImpl struct {
@@ -115,4 +117,35 @@ func (s *UserServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (str
 	}
 
 	return token, refreshToken, http.StatusOK, nil
+}
+
+func (s *UserServiceImpl) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (string, string, int, error) {
+	now := time.Now()
+
+	user, tokenModel, err := s.userRepository.GetUserByRefreshToken(ctx, req.RefreshToken, now)
+	if err != nil {
+		return "", "", http.StatusInternalServerError, err
+	}
+
+	if user == nil || tokenModel == nil {
+		return "", "", http.StatusUnauthorized, fmt.Errorf("invalid or expired refresh token")
+	}
+
+	accessToken, err := pkgJwt.CreateToken(user.ID, user.Username, s.cfg.JwtSecret)
+	if err != nil {
+		return "", "", http.StatusInternalServerError, err
+	}
+
+	newRefreshToken, err := refresh_token.GenerateRefreshToken()
+	if err != nil {
+		return "", "", http.StatusInternalServerError, err
+	}
+
+	expiredAt := time.Now().Add(7 * 24 * time.Hour)
+	err = s.userRepository.UpdateRefreshToken(ctx, tokenModel.ID, newRefreshToken, expiredAt)
+	if err != nil {
+		return "", "", http.StatusInternalServerError, err
+	}
+
+	return accessToken, newRefreshToken, http.StatusOK, nil
 }
