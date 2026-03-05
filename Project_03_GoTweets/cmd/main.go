@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"go_tweets/internal/config"
 	"go_tweets/internal/database"
+	"go_tweets/internal/handler"
+	"go_tweets/internal/repository"
+	"go_tweets/internal/service"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -39,6 +42,11 @@ func main() {
 			"message": "It's works!",
 		})
 	})
+
+	userRepository := repository.NewUserRepository(pool)
+	userService := service.NewUserService(cfg, userRepository)
+	userHandler := handler.NewHandler(router, userService)
+	userHandler.RouterList()
 
 	err = router.Run(":" + cfg.Port)
 	if err != nil {
