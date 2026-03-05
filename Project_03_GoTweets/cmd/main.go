@@ -10,19 +10,18 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("Failed to load config", err)
-		return
 	}
 
 	pool, err := database.ConnectDb(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal("Failed to connect to database", err)
-		return
 	}
 
 	defer pool.Close()
@@ -33,6 +32,8 @@ func main() {
 		fmt.Println("SetTrustedProxies err: ", err)
 		return
 	}
+
+	validate := validator.New()
 
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
@@ -45,7 +46,7 @@ func main() {
 
 	userRepository := repository.NewUserRepository(pool)
 	userService := service.NewUserService(cfg, userRepository)
-	userHandler := handler.NewHandler(router, userService)
+	userHandler := handler.NewHandler(router, validate, userService)
 	userHandler.RouterList()
 
 	err = router.Run(":" + cfg.Port)

@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"go_tweets/internal/models"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -14,6 +15,10 @@ type UserRepository interface {
 	GetUserByEmailOrUsername(ctx context.Context, email, username string) (*models.UserModel, error)
 
 	CreateUser(ctx context.Context, user *models.UserModel) (string, error)
+
+	GetRefreshToken(ctx context.Context, userId uuid.UUID, now time.Time) (*models.RefreshTokenModel, error)
+
+	StoreRefreshToken(ctx context.Context, refreshToken *models.RefreshTokenModel) error
 }
 
 type UserRepositoryImpl struct {
@@ -41,7 +46,7 @@ func (repository *UserRepositoryImpl) GetUserByEmailOrUsername(ctx context.Conte
 	)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -51,14 +56,42 @@ func (repository *UserRepositoryImpl) GetUserByEmailOrUsername(ctx context.Conte
 }
 
 func (repository *UserRepositoryImpl) CreateUser(ctx context.Context, user *models.UserModel) (string, error) {
-	query := `INSERT INTO user(id, email, username, password) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, username, created_at, updated_at`
+	query := `INSERT INTO users(id, email, username, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`
 
-	id := uuid.New()
-	_, err := repository.db.Exec(ctx, query, id, user.Email, user.Username, user.Password, user.CreatedAt, user.UpdatedAt)
+	_, err := repository.db.Exec(ctx, query, user.ID, user.Email, user.Username, user.Password, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
 		return "", err
 	}
 
-	return id.String(), nil
+	return user.ID.String(), nil
+}
 
+func (repository *UserRepositoryImpl) GetRefreshToken(ctx context.Context, userId uuid.UUID, now time.Time) (*models.RefreshTokenModel, error) {
+	query := `SELECT id, user_id, refresh_token, expired_at from refresh_tokens WHERE user_id = $1 AND expired_at > $2`
+
+	var result models.RefreshTokenModel
+	err := repository.db.QueryRow(ctx, query, userId.String(), now).Scan(
+		&result.ID,
+		&result.UserId,
+		&result.RefreshToken,
+		&result.ExpiredAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func (repository *UserRepositoryImpl) StoreRefreshToken(ctx context.Context, refreshToken *models.RefreshTokenModel) error {
+	query := `INSERT INTO refresh_tokens(id, user_id, refresh_token, expired_at, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`
+
+	id := uuid.New()
+	_, err := repository.db.Exec(ctx, query, id, refreshToken.UserId, refreshToken.RefreshToken, refreshToken.ExpiredAt, refreshToken.CreatedAt, refreshToken.UpdatedAt)
+	return err
 }
