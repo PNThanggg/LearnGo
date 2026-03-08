@@ -1,0 +1,59 @@
+# Binaries
+/bin/
+/build/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build
+*.test
+*.out
+*.cover
+coverage.out
+
+# Dependency directories
+/vendor/
+
+# Go workspace
+go.work
+go.work.sum
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# MacOS
+.DS_Store
+
+# Linux
+*~
+
+# Test binary
+*.test
+
+# Generated files
+*.gen.go
+
+# Debug
+debug
+
+# Temporary
+tmp/
+temp/
+
+# Go cache
+.cache/
+/bin
